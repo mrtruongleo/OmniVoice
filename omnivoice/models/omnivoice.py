@@ -276,7 +276,11 @@ class OmniVoice(PreTrainedModel):
         self._asr_pipe = None
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path, *args, **kwargs):
+    def from_pretrained(cls, pretrained_model_name_or_path: Optional[str] = None, *args, **kwargs):
+        if pretrained_model_name_or_path is None:
+            from omnivoice.utils.config import get_default_model
+            pretrained_model_name_or_path = get_default_model()
+
         train_mode = kwargs.pop("train", False)
         load_asr = kwargs.pop("load_asr", False)
         asr_model_name = kwargs.pop("asr_model_name", "openai/whisper-large-v3-turbo")

@@ -1,0 +1,15 @@
+{
+  "default_model": "k2-fsa/OmniVoice",
+  "available_models": [
+    {
+      "id": "k2-fsa/OmniVoice",
+      "name": "OmniVoice (Default)",
+      "description": "Massively multilingual zero-shot TTS model supporting over 600 languages."
+    },
+    {
+      "id": "ModelsLab/omnivoice-singing",
+      "name": "OmniVoice Singing",
+      "description": "OmniVoice singing model with support for style/expressive tags (similar to ElevenLabs). Use emotion, pitch, and style tags to customize the singing voice."
+    }
+  ]
+}

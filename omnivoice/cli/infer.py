@@ -28,6 +28,7 @@ import soundfile as sf
 
 from omnivoice.models.omnivoice import OmniVoice
 from omnivoice.utils.common import get_best_device, str2bool
+from omnivoice.utils.config import get_default_model
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -38,7 +39,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--model",
         type=str,
-        default="k2-fsa/OmniVoice",
+        default=get_default_model(),
         help="Model checkpoint path or HuggingFace repo id.",
     )
     parser.add_argument(

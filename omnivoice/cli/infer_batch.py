@@ -49,6 +49,7 @@ import soundfile as sf
 
 from omnivoice.utils.audio import load_audio
 from omnivoice.utils.common import get_best_device_with_count, str2bool
+from omnivoice.utils.config import get_default_model
 from omnivoice.utils.data_utils import read_test_list
 from omnivoice.utils.duration import RuleDurationEstimator
 
@@ -62,7 +63,7 @@ def get_parser():
     parser.add_argument(
         "--model",
         type=str,
-        default="k2-fsa/OmniVoice",
+        default=get_default_model(),
         help="Path to the model checkpoint (local dir or HF repo id). "
         "Audio tokenizer is expected at <checkpoint>/audio_tokenizer/.",
     )

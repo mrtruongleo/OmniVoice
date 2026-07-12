@@ -33,6 +33,7 @@ import torch
 
 from omnivoice import OmniVoice, OmniVoiceGenerationConfig
 from omnivoice.utils.common import get_best_device
+from omnivoice.utils.config import get_default_model, get_available_models
 from omnivoice.utils.lang_map import LANG_NAMES, lang_display_name
 
 
@@ -110,7 +111,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--model",
-        default="k2-fsa/OmniVoice",
+        default=get_default_model(),
         help="Model checkpoint path or HuggingFace repo id.",
     )
     parser.add_argument(
@@ -149,12 +150,45 @@ def build_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 
 
+class ModelHolder:
+    def __init__(self, model: OmniVoice, checkpoint: str, device: str, load_asr: bool, asr_model: str):
+        self.model = model
+        self.checkpoint = checkpoint
+        self.device = device
+        self.load_asr = load_asr
+        self.asr_model = asr_model
+
+    def switch(self, new_checkpoint: str):
+        if self.checkpoint == new_checkpoint:
+            return "Model already loaded / 模型已在运行中."
+        try:
+            import gc
+            # Delete old model references to free GPU memory
+            self.model = None
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            elif hasattr(torch, "xpu") and torch.xpu.is_available():
+                torch.xpu.empty_cache()
+
+            # Load the new model
+            self.model = OmniVoice.from_pretrained(
+                new_checkpoint,
+                device_map=self.device,
+                dtype=torch.float16,
+                load_asr=self.load_asr,
+                asr_model_name=self.asr_model,
+            )
+            self.checkpoint = new_checkpoint
+            return f"Successfully switched to {new_checkpoint} / 成功切换到 {new_checkpoint}"
+        except Exception as e:
+            return f"Error switching model / 切换模型出错: {e}"
+
+
 def build_demo(
-    model: OmniVoice,
-    checkpoint: str,
+    model_holder: ModelHolder,
     generate_fn=None,
 ) -> gr.Blocks:
-    sampling_rate = model.sampling_rate
 
     # -- shared generation core --
     def _gen_core(
@@ -197,7 +231,7 @@ def build_demo(
         if mode == "clone":
             if not ref_audio:
                 return None, "Please upload a reference audio."
-            kw["voice_clone_prompt"] = model.create_voice_clone_prompt(
+            kw["voice_clone_prompt"] = model_holder.model.create_voice_clone_prompt(
                 ref_audio=ref_audio,
                 ref_text=ref_text,
             )
@@ -206,12 +240,12 @@ def build_demo(
             kw["instruct"] = instruct.strip()
 
         try:
-            audio = model.generate(**kw)
+            audio = model_holder.model.generate(**kw)
         except Exception as e:
             return None, f"Error: {type(e).__name__}: {e}"
 
         waveform = (audio[0] * 32767).astype(np.int16)
-        return (sampling_rate, waveform), "Done."
+        return (model_holder.model.sampling_rate, waveform), "Done."
 
     # Allow external wrappers (e.g. spaces.GPU for ZeroGPU Spaces)
     _gen = generate_fn if generate_fn is not None else _gen_core
@@ -293,6 +327,10 @@ def build_demo(
             )
         return ns, gs, dn, sp, du, pp, po
 
+    available_models = get_available_models()
+    model_choices = {m["name"]: m["id"] for m in available_models}
+    model_descriptions = {m["id"]: m["description"] for m in available_models}
+
     with gr.Blocks(theme=theme, css=css, title="OmniVoice Demo") as demo:
         gr.Markdown(
             """
@@ -306,6 +344,41 @@ State-of-the-art text-to-speech model for **600+ languages**, supporting:
 Built with [OmniVoice](https://github.com/k2-fsa/OmniVoice)
 by Xiaomi AI Lab Next-gen Kaldi team.
 """
+        )
+
+        with gr.Row():
+            with gr.Column():
+                default_name = next(
+                    (m["name"] for m in available_models if m["id"] == model_holder.checkpoint),
+                    "Custom Model"
+                )
+                model_select = gr.Dropdown(
+                    choices=list(model_choices.keys()),
+                    value=default_name,
+                    label="Active Model / 正在使用的模型",
+                    interactive=True,
+                )
+                model_desc_box = gr.Markdown(
+                    f"**Model Description / 模型描述:**\n\n{model_descriptions.get(model_holder.checkpoint, 'Custom model loaded.')}"
+                )
+                model_status = gr.Textbox(
+                    label="Model Loading Status / 模型加载状态",
+                    value="Ready / 已就绪",
+                    interactive=False,
+                )
+
+        def on_model_change(new_name):
+            new_id = model_choices.get(new_name)
+            if not new_id:
+                return "Unknown model / 未知模型", "No description available."
+            status = model_holder.switch(new_id)
+            desc = model_descriptions.get(new_id, "")
+            return status, f"**Model Description / 模型描述:**\n\n{desc}"
+
+        model_select.change(
+            on_model_change,
+            inputs=[model_select],
+            outputs=[model_status, model_desc_box],
         )
 
         with gr.Tabs():
@@ -521,9 +594,16 @@ def main(argv=None) -> int:
         load_asr=not args.no_asr,
         asr_model_name=args.asr_model,
     )
+    model_holder = ModelHolder(
+        model=model,
+        checkpoint=checkpoint,
+        device=device,
+        load_asr=not args.no_asr,
+        asr_model=args.asr_model,
+    )
     print("Model loaded.")
 
-    demo = build_demo(model, checkpoint)
+    demo = build_demo(model_holder)
 
     demo.queue().launch(
         server_name=args.ip,
