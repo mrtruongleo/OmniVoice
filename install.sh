@@ -2,6 +2,7 @@
 # ============================================================
 # OmniVoice - Install Script for Google Colab
 # Usage: bash install.sh [--share] [--demo|--infer]
+# bash <(curl -fsSL https://raw.githubusercontent.com/mrtruongleo/OmniVoice/master/install.sh) --share
 # ============================================================
 
 set -e
