@@ -16,6 +16,8 @@ resolution-markers = [
 
 [manifest]
 constraints = [
+    { name = "llvmlite", specifier = ">=0.40.0" },
+    { name = "numba", specifier = ">=0.57.0" },
     { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32'", specifier = "==2.8.0" },
     { name = "torch", marker = "sys_platform == 'linux' or sys_platform == 'win32'", specifier = "==2.8.0", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchaudio", marker = "sys_platform != 'linux' and sys_platform != 'win32'", specifier = "==2.8.0" },
@@ -1588,7 +1590,7 @@ requires-dist = [
     { name = "funasr", marker = "extra == 'eval'" },
     { name = "gradio" },
     { name = "jiwer", marker = "extra == 'eval'", specifier = "==3.1.0" },
-    { name = "librosa" },
+    { name = "librosa", specifier = ">=0.10.1" },
     { name = "numpy" },
     { name = "pydub" },
     { name = "s3prl", marker = "extra == 'eval'" },
