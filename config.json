@@ -7,7 +7,7 @@
       "description": "Massively multilingual zero-shot TTS model supporting over 600 languages."
     },
     {
-      "id": "ModelsLab/omnivoice-singing",
+      "id": "raydotac/omnivoice-singing-bucket",
       "name": "OmniVoice Singing",
       "description": "OmniVoice singing model with support for style/expressive tags (similar to ElevenLabs). Use emotion, pitch, and style tags to customize the singing voice."
     }
