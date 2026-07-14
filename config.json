@@ -1,8 +1,8 @@
 {
-  "default_model": "k2-fsa/OmniVoice",
+  "default_model": "raydotac/OmniVoice-bucket",
   "available_models": [
     {
-      "id": "k2-fsa/OmniVoice",
+      "id": "raydotac/OmniVoice-bucket",
       "name": "OmniVoice (Default)",
       "description": "Massively multilingual zero-shot TTS model supporting over 600 languages."
     },
