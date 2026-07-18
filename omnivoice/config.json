@@ -15,6 +15,16 @@
       "id": "kizuna-intelligence/tsukuyomichan-omnivoice-full-finetune",
       "name": "Tsukuyomi-chan OmniVoice (Full Finetune)",
       "description": "AI voice model of Yuzuki Yukari."
+    },
+    {
+      "id": "kizuna-intelligence/amitaro-ita-omnivoice-full-finetune",
+      "name": "Amitaro Ita OmniVoice (Full Finetune)",
+      "description": "AI voice model of Amitaro Ita."
+    },
+    {
+      "id": "kizuna-intelligence/sayoko-omnivoice-full-finetune",
+      "name": "Sayoko OmniVoice (Full Finetune)",
+      "description": "AI voice model of Sayoko."
     }
   ]
 }
