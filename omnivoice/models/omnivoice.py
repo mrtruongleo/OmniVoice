@@ -220,7 +220,57 @@ def _resolve_model_path(name_or_path: str) -> str:
         return name_or_path
     from huggingface_hub import snapshot_download
 
-    return snapshot_download(name_or_path)
+    # Read optional token from environment variable (HF_TOKEN or HUGGING_FACE_HUB_TOKEN)
+    token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN") or None
+
+    # Try as a Model repo first, then Dataset repo, then HF Bucket
+    try:
+        return snapshot_download(name_or_path, token=token, repo_type="model")
+    except Exception as model_err:
+        pass
+
+    try:
+        return snapshot_download(name_or_path, token=token, repo_type="dataset")
+    except Exception:
+        pass
+
+    # Fall back to HF Bucket download (e.g. repos created via "Add to bucket")
+    try:
+        from huggingface_hub import list_bucket_tree, download_bucket_files
+        import tempfile
+
+        # Use a stable cache dir so we don't re-download on every run
+        cache_dir = os.path.join(
+            os.environ.get("HF_HOME", os.path.expanduser("~/.cache/huggingface")),
+            "buckets",
+            name_or_path.replace("/", "--"),
+        )
+        os.makedirs(cache_dir, exist_ok=True)
+
+        logging.info(f"Downloading HF Bucket '{name_or_path}' to {cache_dir} ...")
+        bucket_files = list(list_bucket_tree(name_or_path, token=token))
+        file_pairs = [
+            (bf, os.path.join(cache_dir, bf.path))
+            for bf in bucket_files
+            if bf.type == "file"
+        ]
+        # Create subdirectories for nested paths
+        for _, local_path in file_pairs:
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+
+        download_bucket_files(
+            bucket_id=name_or_path,
+            files=file_pairs,
+            token=token,
+        )
+        return cache_dir
+    except Exception as bucket_err:
+        raise RuntimeError(
+            f"Could not resolve model path '{name_or_path}'. "
+            f"Tried model repo, dataset repo, and HF Bucket. "
+            f"Last error: {bucket_err}"
+        )
+
 
 
 class OmniVoice(PreTrainedModel):
