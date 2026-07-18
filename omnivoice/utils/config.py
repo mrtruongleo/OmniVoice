@@ -20,8 +20,21 @@
 import json
 import os
 from pathlib import Path
+import importlib.resources as pkg_resources
 
 DEFAULT_MODEL = "k2-fsa/OmniVoice"
+
+
+def get_packaged_config() -> dict:
+    """Load config.json packaged inside the omnivoice library."""
+    try:
+        config_text = pkg_resources.files("omnivoice").joinpath("config.json").read_text(encoding="utf-8")
+        data = json.loads(config_text)
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    return {}
 
 
 def get_default_model() -> str:
@@ -33,7 +46,8 @@ def get_default_model() -> str:
     3. Local `config.json` in the current working directory.
     4. Project root `config.json` (resolving up from this file's location).
     5. Global user config in `~/.config/omnivoice/config.json`.
-    6. Fallback default model ("k2-fsa/OmniVoice").
+    6. Packaged `config.json` (inside the library).
+    7. Fallback default model ("k2-fsa/OmniVoice").
     """
     # 1. Environment variables
     env_model = os.environ.get("OMNIVOICE_DEFAULT_MODEL") or os.environ.get("OMNIVOICE_MODEL")
@@ -89,6 +103,11 @@ def get_default_model() -> str:
         except Exception:
             pass
 
+    # 6. Packaged config
+    pkg_cfg = get_packaged_config()
+    if pkg_cfg and "default_model" in pkg_cfg:
+        return pkg_cfg["default_model"]
+
     return DEFAULT_MODEL
 
 
@@ -109,7 +128,8 @@ def get_available_models() -> list:
     2. Local `config.json` in the current working directory.
     3. Project root `config.json` (resolving up from this file's location).
     4. Global user config in `~/.config/omnivoice/config.json`.
-    5. Fallback default available models.
+    5. Packaged `config.json` (inside the library).
+    6. Fallback default available models.
     """
     # 1. Environment variable for config file path
     env_config = os.environ.get("OMNIVOICE_CONFIG")
@@ -158,6 +178,11 @@ def get_available_models() -> list:
                     return data["available_models"]
         except Exception:
             pass
+
+    # 5. Packaged config
+    pkg_cfg = get_packaged_config()
+    if pkg_cfg and "available_models" in pkg_cfg:
+        return pkg_cfg["available_models"]
 
     return DEFAULT_AVAILABLE_MODELS
 
