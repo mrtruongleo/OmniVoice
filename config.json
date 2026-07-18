@@ -10,6 +10,11 @@
       "id": "raydotac/omnivoice-singing-bucket",
       "name": "OmniVoice Singing",
       "description": "OmniVoice singing model with support for style/expressive tags (similar to ElevenLabs). Use emotion, pitch, and style tags to customize the singing voice."
+    },
+    {
+      "id": "kizuna-intelligence/tsukuyomichan-omnivoice-full-finetune",
+      "name": "Tsukuyomi-chan OmniVoice (Full Finetune)",
+      "description": "AI voice model of Yuzuki Yukari."
     }
   ]
 }
