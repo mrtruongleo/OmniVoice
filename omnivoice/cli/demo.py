@@ -328,6 +328,24 @@ def build_demo(
         return ns, gs, dn, sp, du, pp, po
 
     available_models = get_available_models()
+    
+    # Check if the active checkpoint loaded by ModelHolder is in available_models.
+    # If not (e.g., custom model passed via --model), dynamically register it in UI dropdown.
+    current_checkpoint = model_holder.checkpoint
+    if current_checkpoint and not any(m["id"] == current_checkpoint for m in available_models):
+        import os
+        # Generate a descriptive display name
+        if os.path.exists(current_checkpoint):
+            display_name = f"Custom Model ({os.path.basename(current_checkpoint)})"
+        else:
+            display_name = f"Custom Model ({current_checkpoint})"
+        
+        available_models.append({
+            "id": current_checkpoint,
+            "name": display_name,
+            "description": f"Custom model specified at launch:\n{current_checkpoint}"
+        })
+
     model_choices = {m["name"]: m["id"] for m in available_models}
     model_descriptions = {m["id"]: m["description"] for m in available_models}
 
